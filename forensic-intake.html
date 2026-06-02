@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forensic Intake — by TomDoe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #080a0e;
+  --bg-card: #0d0f18;
+  --bg-card-hover: #111420;
+  --bg-input: #0b0d16;
+  --accent: #00e5a0;
+  --accent-dim: rgba(0,229,160,0.12);
+  --accent-border: rgba(0,229,160,0.35);
+  --danger: #ff4d6d;
+  --danger-dim: rgba(255,77,109,0.1);
+  --warn: #ffb347;
+  --warn-dim: rgba(255,179,71,0.1);
+  --info: #5b9cf6;
+  --info-dim: rgba(91,156,246,0.1);
+  --text: #dde1ec;
+  --text-secondary: #7a84a0;
+  --text-muted: #3e4560;
+  --border: rgba(255,255,255,0.06);
+  --border-active: rgba(255,255,255,0.12);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Syne', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+.shell {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 5rem;
+}
+
+/* ── HEADER ── */
+.header {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  padding: 1.75rem 1.75rem 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent 60%);
+}
+.header-scanlines {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,229,160,0.012) 3px,
+    rgba(0,229,160,0.012) 4px
+  );
+  pointer-events: none;
+}
+
+.logo-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+.logo-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent), 0 0 20px rgba(0,229,160,0.3);
+  animation: breathe 2.5s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%,100% { opacity:1; box-shadow: 0 0 8px var(--accent), 0 0 20px rgba(0,229,160,0.3); }
+  50% { opacity:0.5; box-shadow: 0 0 4px var(--accent); }
+}
+.logo-text {
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.header h1 {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  line-height: 1.1;
+}
+.header h1 span { color: var(--accent); }
+.header-author {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.author-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+.author-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border-active);
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.03);
+}
+
+.case-meta {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 2;
+  flex-shrink: 0;
+}
+.case-id {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+  font-family: var(--mono);
+}
+
+/* ── TRACK SELECTOR ── */
+.section-divider {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 1.75rem 0 1rem;
+}
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.track-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1.75rem;
+}
+.track-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+.track-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: transparent;
+  transition: background 0.25s;
+}
+.track-btn:hover { background: var(--bg-card-hover); border-color: var(--border-active); }
+.track-btn:hover::after { background: rgba(255,255,255,0.07); }
+.track-btn.active { border-color: var(--accent-border); background: rgba(0,229,160,0.03); }
+.track-btn.active::after { background: var(--accent); }
+.track-btn.active-danger { border-color: rgba(255,77,109,0.35); background: rgba(255,77,109,0.03); }
+.track-btn.active-danger::after { background: var(--danger); }
+
+.track-icon { font-size: 22px; margin-bottom: 10px; display: block; }
+.track-label {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+  margin-bottom: 5px;
+}
+.track-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; display: block; }
+.track-pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 9px;
+  border-radius: 20px;
+  margin-top: 10px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+.track-pill.danger { background: var(--danger-dim); color: var(--danger); border-color: rgba(255,77,109,0.35); }
+
+/* ── PROGRESS ── */
+.progress-bar-wrap { margin-bottom: 1.75rem; }
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 7px;
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+.progress-track { height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 0 10px rgba(0,229,160,0.6);
+}
+
+/* ── PHASE ── */
+.phase { margin-bottom: 1rem; }
+
+.phase-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.phase-header:hover { background: var(--bg-card-hover); border-color: var(--border-active); }
+.phase-header.open {
+  border-color: var(--border-active);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background: var(--bg-card-hover);
+}
+.phase-header.done { border-color: rgba(0,229,160,0.2); }
+
+.phase-left { display: flex; align-items: center; gap: 12px; }
+.phase-num {
+  width: 25px; height: 25px;
+  border-radius: 50%;
+  border: 1px solid var(--border-active);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.phase-header.open .phase-num {
+  background: var(--accent-dim);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.phase-header.done .phase-num {
+  background: var(--accent-dim);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.phase-title { font-family: var(--display); font-size: 14px; font-weight: 600; color: var(--text); }
+.phase-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+.phase-right { display: flex; align-items: center; gap: 8px; }
+.phase-badge {
+  font-size: 10px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.phase-badge.done { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+.phase-badge.skip { background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid var(--border); }
+
+.chevron {
+  color: var(--text-muted);
+  font-size: 14px;
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+  display: inline-block;
+  line-height: 1;
+}
+.phase-header.open .chevron { transform: rotate(180deg); color: var(--accent); }
+
+.phase-body {
+  display: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border-active);
+  border-top: none;
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  padding: 1.25rem;
+}
+.phase-body.open { display: block; animation: slideDown 0.2s ease; }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── QUESTION ── */
+.q-block {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  transition: opacity 0.2s;
+}
+.q-block:last-of-type { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.q-block.skipped { opacity: 0.3; pointer-events: none; }
+.q-block.skipped::after {
+  content: 'OMITIDA';
+  position: absolute;
+  top: 0; right: 0;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.q-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.q-label { display: flex; align-items: flex-start; gap: 10px; flex: 1; }
+.q-num { font-size: 11px; color: var(--text-muted); min-width: 22px; padding-top: 2px; }
+.q-text { font-size: 13px; color: var(--text); line-height: 1.5; flex: 1; }
+.q-text .tag {
+  display: inline-block;
+  font-size: 9px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  margin-left: 7px;
+  vertical-align: middle;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.tag.critical  { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(255,77,109,0.25); }
+.tag.important { background: var(--warn-dim);   color: var(--warn);   border: 1px solid rgba(255,179,71,0.25); }
+.tag.optional  { background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid var(--border); }
+
+.q-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-skip {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+.btn-skip:hover { border-color: var(--border-active); color: var(--text-secondary); }
+.btn-unskip {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-dim);
+  color: var(--accent);
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+
+/* ── INPUTS ── */
+textarea, input[type="text"] {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 10px 12px;
+  transition: border-color 0.2s;
+  outline: none;
+  resize: vertical;
+}
+textarea:focus, input[type="text"]:focus { border-color: var(--accent-border); }
+textarea { min-height: 80px; }
+
+/* ── OPTIONS ── */
+.opt-group { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 6px; }
+.opt-btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 5px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+.opt-btn:hover { border-color: var(--border-active); color: var(--text); background: rgba(255,255,255,0.02); }
+.opt-btn.selected       { border-color: var(--accent-border);          color: var(--accent);  background: var(--accent-dim); }
+.opt-btn.selected-danger { border-color: rgba(255,77,109,0.4);         color: var(--danger);  background: var(--danger-dim); }
+.opt-btn.selected-warn  { border-color: rgba(255,179,71,0.4);          color: var(--warn);    background: var(--warn-dim); }
+
+/* ── URGENCY ── */
+.urgency-display {
+  margin-top: 10px;
+  padding: 9px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: border-color 0.3s, color 0.3s;
+  letter-spacing: 0.01em;
+}
+
+/* ── PHASE FOOTER ── */
+.phase-footer {
+  display: flex;
+  gap: 8px;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.btn-primary {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-border);
+  background: var(--accent-dim);
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.03em;
+}
+.btn-primary:hover { background: rgba(0,229,160,0.22); }
+.btn-secondary {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.03em;
+}
+.btn-secondary:hover { border-color: var(--border-active); color: var(--text-secondary); }
+
+/* ── SKIP PHASE ── */
+.skip-phase-row { margin-bottom: 1rem; }
+.skip-phase-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.15s;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.skip-phase-btn:hover { border-color: var(--border-active); color: var(--text-secondary); }
+.skip-phase-btn.active { color: var(--warn); border-color: rgba(255,179,71,0.4); background: var(--warn-dim); }
+
+/* ── EXPORT PANEL ── */
+.export-panel {
+  margin-top: 2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+.export-title {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.export-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
+.btn-export {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-border);
+  background: var(--accent-dim);
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.03em;
+}
+.btn-export:hover { background: rgba(0,229,160,0.22); }
+
+.export-output {
+  display: none;
+  margin-top: 1rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  max-height: 420px;
+  overflow-y: auto;
+  line-height: 1.8;
+}
+.export-output.visible { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-scanlines"></div>
+    <div class="header-left">
+      <div class="logo-line">
+        <div class="logo-dot"></div>
+        <span class="logo-text">Forensic Intake</span>
+      </div>
+      <h1>Incident <span>Assessment</span></h1>
+      <div class="header-author">
+        <span class="author-label">by</span>
+        <span class="author-name">TomDoe</span>
+      </div>
+    </div>
+    <div class="case-meta">
+      <div class="case-id" id="case-id">CASE-XXXXXXXX</div>
+      <div id="case-time">—</div>
+    </div>
+  </div>
+
+  <!-- TRACK -->
+  <div class="section-divider">Tipo de caso</div>
+  <div class="track-selector">
+    <button class="track-btn" onclick="setTrack('civil')" id="track-civil">
+      <span class="track-icon">📱</span>
+      <span class="track-label">Usuario civil</span>
+      <span class="track-desc">Cuenta de red social, email, WhatsApp comprometidos. Sin conocimiento técnico.</span>
+      <span class="track-pill">IG · Gmail · WhatsApp · TikTok</span>
+    </button>
+    <button class="track-btn" onclick="setTrack('corp')" id="track-corp">
+      <span class="track-icon">🏢</span>
+      <span class="track-label">Incidente corporativo</span>
+      <span class="track-desc">Infraestructura, red, servidor, ransomware, intrusión activa.</span>
+      <span class="track-pill danger">Alta criticidad</span>
+    </button>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-bar-wrap" id="progress-section" style="display:none">
+    <div class="progress-labels">
+      <span id="progress-label">Completando fase 1…</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- PHASES -->
+  <div id="phases-container"></div>
+
+  <!-- EXPORT -->
+  <div class="export-panel" id="export-panel" style="display:none">
+    <div class="export-title">📋 Resumen del caso</div>
+    <div class="export-actions">
+      <button class="btn-export" onclick="generateExport()">Generar reporte</button>
+      <button class="btn-secondary" id="copy-btn" onclick="copyExport(this)">Copiar al portapapeles</button>
+      <button class="btn-secondary" onclick="downloadExport()">⬇ Descargar .txt</button>
+      <button class="btn-secondary" onclick="resetAll()">↺ Nuevo caso</button>
+    </div>
+    <div class="export-output" id="export-output"></div>
+  </div>
+
+</div>
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────────
+
+const TRACKS = {
+  civil: {
+    label: 'Usuario civil',
+    phases: [
+      {
+        id: 'triage',
+        title: 'Triage inicial',
+        subtitle: '¿Qué pasó exactamente?',
+        questions: [
+          { id:'plataforma', text:'¿Qué plataforma o servicio está comprometido?', tag:'critical', type:'options', multi:false,
+            opts:['Instagram','Gmail','WhatsApp','Facebook','TikTok','Twitter/X','Outlook','Otro'] },
+          { id:'sintoma', text:'¿Cómo te diste cuenta de que algo estaba mal?', tag:'critical', type:'options', multi:true,
+            opts:['No puedo ingresar','Me avisaron que me hackearon','Vi publicaciones que no hice','Me borraron la cuenta','Me llegó alerta de inicio de sesión','Cambiaron mis datos','Me están extorsionando','Otro'] },
+          { id:'cuando', text:'¿Cuándo lo detectaste por primera vez? (fecha y hora aproximada)', tag:'critical', type:'text',
+            placeholder:'Ej: Hoy a las 14:00, o "ayer a la tarde"' },
+          { id:'activo', text:'¿El acceso no autorizado sigue activo ahora mismo?', tag:'critical', type:'options', multi:false,
+            opts:['Sí, sigue activo','No sé','Creo que no','Me cerraron la cuenta'] },
+        ]
+      },
+      {
+        id: 'acceso',
+        title: 'Estado del acceso',
+        subtitle: '¿Todavía podés entrar a tu cuenta?',
+        questions: [
+          { id:'puede_entrar', text:'¿Podés ingresar actualmente a la cuenta?', tag:'critical', type:'options', multi:false,
+            opts:['Sí, tengo acceso','No, cambiaron la contraseña','No, cambiaron el email/tel','No, inhabilitaron la cuenta','No sé'] },
+          { id:'email_tel_original', text:'¿Tenés acceso al email o teléfono con el que abriste la cuenta?', tag:'important', type:'options', multi:false,
+            opts:['Sí, tengo acceso al email','Sí, tengo acceso al número','Tengo ambos','No tengo ninguno','No recuerdo cuál usé'] },
+          { id:'2fa', text:'¿Tenías autenticación de dos factores (2FA) activada?', tag:'important', type:'options', multi:false,
+            opts:['Sí, por SMS','Sí, por app (Google Auth, etc.)','No tenía','No sé qué es eso'] },
+          { id:'dispositivos', text:'¿Desde qué dispositivos solías acceder a la cuenta?', tag:'optional', type:'options', multi:true,
+            opts:['Mi celular personal','PC o notebook','Celular de trabajo','PC de trabajo o ciber','Tablet'] },
+        ]
+      },
+      {
+        id: 'vector',
+        title: 'Vector probable',
+        subtitle: '¿Cómo pudo haber pasado?',
+        questions: [
+          { id:'link_sospechoso', text:'¿Hiciste click en algún link raro antes de darte cuenta?', tag:'important', type:'options', multi:false,
+            opts:['Sí, en un DM/mensaje','Sí, en un email','Sí, en un SMS','Sí, en otra red social','No creo','No sé'] },
+          { id:'aplicaciones', text:'¿Diste permiso a alguna aplicación de terceros recientemente?', tag:'important', type:'options', multi:false,
+            opts:['Sí, para "aumentar seguidores"','Sí, para editar fotos/videos','Sí, para ver quién me vio','Sí, otra app','No','No sé'] },
+          { id:'contraseña_comp', text:'¿Alguna vez le diste tu contraseña a alguien o la escribiste en algún sitio?', tag:'important', type:'options', multi:true,
+            opts:['A una pareja o ex pareja','A un amigo/familiar','En un sitio que pedía "iniciar sesión"','No recuerdo','No, nunca'] },
+          { id:'misma_pass', text:'¿Usabas la misma contraseña en otras cuentas?', tag:'important', type:'options', multi:false,
+            opts:['Sí, la misma en todo','Sí, parecida','No, distintas','No recuerdo'] },
+        ]
+      },
+      {
+        id: 'impacto',
+        title: 'Impacto y evidencia',
+        subtitle: '¿Qué hicieron y qué tenés para mostrar?',
+        questions: [
+          { id:'que_hicieron', text:'¿Qué acciones hizo el atacante en tu cuenta?', tag:'critical', type:'options', multi:true,
+            opts:['Publicaron contenido','Enviaron mensajes a mis contactos','Me bloquearon personas','Cambiaron foto/bio/nombre','Eliminaron publicaciones','Vendieron/ofrecieron cosas','Me extorsionaron con fotos/videos','Accedieron a mensajes privados','No vi actividad rara'] },
+          { id:'extorsion', text:'¿Hay extorsión o amenaza activa?', tag:'critical', type:'options', multi:false,
+            opts:['Sí, por dinero','Sí, amenaza de publicar fotos/videos','Sí, otro tipo','No'] },
+          { id:'evidencia', text:'¿Tenés capturas de pantalla del incidente?', tag:'important', type:'options', multi:false,
+            opts:['Sí, tengo varias','Tengo una o dos','No tomé capturas','No sé qué guardar'] },
+          { id:'denuncias', text:'¿Ya reportaste el incidente a la plataforma o a la policía?', tag:'optional', type:'options', multi:true,
+            opts:['Sí, reporté a la plataforma','Sí, fui a la policía','Sí, a ambos','No hice nada todavía','No sé cómo hacerlo'] },
+        ]
+      },
+      {
+        id: 'contexto',
+        title: 'Contexto personal',
+        subtitle: 'Para orientar la recuperación correctamente',
+        questions: [
+          { id:'cuenta_laboral', text:'¿La cuenta tiene uso laboral o comercial?', tag:'important', type:'options', multi:false,
+            opts:['Sí, es mi negocio/emprendimiento','Sí, trabajo de influencer/contenido','Sí, la uso para trabajo','No, es personal'] },
+          { id:'tiempo_cuenta', text:'¿Hace cuánto tiempo tenés la cuenta?', tag:'optional', type:'options', multi:false,
+            opts:['Menos de 1 año','1 a 3 años','3 a 7 años','Más de 7 años'] },
+          { id:'menor', text:'¿La víctima es menor de edad?', tag:'critical', type:'options', multi:false,
+            opts:['Sí','No','Prefiero no decir'] },
+          { id:'notas_adicionales', text:'Información adicional o contexto que quieras agregar', tag:'optional', type:'textarea',
+            placeholder:'Cualquier detalle que creas relevante...' },
+        ]
+      },
+    ]
+  },
+
+  corp: {
+    label: 'Incidente corporativo',
+    phases: [
+      {
+        id: 'triage_corp',
+        title: 'Triage de incidente',
+        subtitle: 'Clasificación inicial',
+        questions: [
+          { id:'tipo_incidente', text:'¿Cuál es el tipo aparente de incidente?', tag:'critical', type:'options', multi:false,
+            opts:['Ransomware / cifrado de archivos','Intrusión activa','Exfiltración de datos','DoS / DDoS','Compromiso de credenciales','Insider threat','Defacement web','Acceso físico no autorizado','No sé / por determinar'] },
+          { id:'estado_incidente', text:'¿El incidente sigue activo en este momento?', tag:'critical', type:'options', multi:false,
+            opts:['Sí, activo y en curso','Creo que sí','Fue contenido','Ya cesó','No sé'] },
+          { id:'cuando_corp', text:'¿Cuándo fue detectado el incidente? (fecha y hora exacta)', tag:'critical', type:'text',
+            placeholder:'Ej: 2024-06-01 09:45 UTC-3' },
+          { id:'como_detecto', text:'¿Cómo fue detectado el incidente?', tag:'critical', type:'options', multi:false,
+            opts:['Alerta de SIEM/IDS','Comportamiento inusual detectado por usuario','Aviso de tercero externo','Archivos cifrados/inaccesibles','Nota de rescate','Monitoreo proactivo','Otro'] },
+        ]
+      },
+      {
+        id: 'infra',
+        title: 'Infraestructura afectada',
+        subtitle: 'Alcance del impacto',
+        questions: [
+          { id:'sistemas_afectados', text:'¿Qué sistemas están afectados?', tag:'critical', type:'options', multi:true,
+            opts:['Servidores de producción','Estaciones de trabajo','Controladores de dominio (AD)','Bases de datos','Infraestructura de red','Servicios cloud','Backups','Sistemas OT/SCADA','Dispositivos IoT'] },
+          { id:'cantidad_hosts', text:'¿Cuántos hosts/dispositivos están comprometidos (estimado)?', tag:'important', type:'options', multi:false,
+            opts:['1','2 a 10','11 a 50','51 a 200','Más de 200','No determinado'] },
+          { id:'exposicion_internet', text:'¿El sistema tiene servicios expuestos directamente a internet?', tag:'critical', type:'options', multi:true,
+            opts:['VPN sin MFA','RDP expuesto','SSH expuesto','Panel de administración web','API pública','Exchange / correo','No / todo detrás de firewall','No sé'] },
+          { id:'aislamiento', text:'¿Se aisló ya algún sistema de la red?', tag:'important', type:'options', multi:false,
+            opts:['Sí, todos los afectados','Sí, algunos','No','No es posible hacerlo'] },
+        ]
+      },
+      {
+        id: 'vector_corp',
+        title: 'Vector de ataque',
+        subtitle: 'Hipótesis de entrada',
+        questions: [
+          { id:'vector_probable', text:'¿Cuál es el vector de entrada más probable?', tag:'critical', type:'options', multi:false,
+            opts:['Phishing con payload','Explotación de vulnerabilidad pública','Credenciales comprometidas','Supply chain / tercero comprometido','Insider malicioso','Brute force RDP/VPN','Dispositivo físico (USB, etc.)','No determinado aún'] },
+          { id:'creds_comprometidas', text:'¿Hay cuentas comprometidas identificadas?', tag:'critical', type:'options', multi:false,
+            opts:['Sí, cuentas de usuario regular','Sí, cuentas con privilegios elevados','Sí, cuenta de servicio / sistema','No identificadas aún','No'] },
+          { id:'iocs', text:'¿Se identificaron IOCs (IPs, dominios, hashes, etc.)?', tag:'important', type:'textarea',
+            placeholder:'Listar IPs sospechosas, dominios C2, hashes de archivos maliciosos...' },
+          { id:'persistence', text:'¿Hay evidencia de mecanismos de persistencia?', tag:'important', type:'options', multi:true,
+            opts:['Nuevos usuarios creados','Tareas programadas sospechosas','Servicios nuevos instalados','Keys de registro modificadas','Puertas traseras/RAT','No detectado','No sé'] },
+        ]
+      },
+      {
+        id: 'impacto_corp',
+        title: 'Impacto y datos',
+        subtitle: 'Alcance real del daño',
+        questions: [
+          { id:'datos_afectados', text:'¿Qué tipo de datos podrían estar comprometidos?', tag:'critical', type:'options', multi:true,
+            opts:['PII de clientes','Datos financieros','Propiedad intelectual','Datos de salud (PHI)','Credenciales de acceso','Datos de empleados','Información de contratos','No determinado'] },
+          { id:'exfiltracion', text:'¿Hay evidencia de exfiltración de datos?', tag:'critical', type:'options', multi:false,
+            opts:['Sí, confirmada','Sí, posible pero no confirmada','No se detectó','No sé'] },
+          { id:'impacto_operativo', text:'¿Cuál es el impacto operativo actual?', tag:'important', type:'options', multi:true,
+            opts:['Producción completamente detenida','Servicios degradados','Pérdida de acceso a datos críticos','Pérdida de acceso a comunicaciones','Impacto mínimo','Sin impacto operativo visible'] },
+          { id:'ransomware_nota', text:'Si es ransomware: ¿tenés la nota de rescate? (copiar texto o describir)', tag:'optional', type:'textarea',
+            placeholder:'Texto de la nota o descripción del mensaje...' },
+        ]
+      },
+      {
+        id: 'forense_corp',
+        title: 'Estado forense',
+        subtitle: 'Qué evidencia hay disponible',
+        questions: [
+          { id:'logs_disponibles', text:'¿Qué logs están disponibles?', tag:'critical', type:'options', multi:true,
+            opts:['Logs de firewall','Logs de evento Windows (EVTX)','Logs de servidor web','Logs de Active Directory','NetFlow / tráfico de red','Logs de aplicación','Logs de EDR/AV','Sin logs disponibles'] },
+          { id:'evidencia_intacta', text:'¿Los sistemas afectados fueron modificados desde el incidente?', tag:'critical', type:'options', multi:true,
+            opts:['Sí, se reiniciaron','Sí, se instaló software','Sí, se hizo limpieza manual','No, están intactos','Algunos sí, otros no'] },
+          { id:'backups', text:'¿Hay backups disponibles previos al incidente?', tag:'important', type:'options', multi:false,
+            opts:['Sí, verificados y limpios','Sí, pero no verificados','Sí, pero también cifrados','No hay backups','No sé'] },
+          { id:'memoria_volatil', text:'¿Se hizo volcado de memoria RAM en algún sistema afectado?', tag:'optional', type:'options', multi:false,
+            opts:['Sí, de todos los críticos','Sí, de alguno','No','No sé cómo hacerlo'] },
+        ]
+      },
+      {
+        id: 'contexto_corp',
+        title: 'Contexto organizacional',
+        subtitle: 'Restricciones y requerimientos',
+        questions: [
+          { id:'regulatorio', text:'¿Hay obligaciones regulatorias de reporte?', tag:'critical', type:'options', multi:true,
+            opts:['GDPR','PCI-DSS','HIPAA','Regulación local / SIGEN','Ley 25326 (Argentina)','Sector financiero (BCRA)','Sin obligaciones regulatorias','No sé'] },
+          { id:'seguro_cyber', text:'¿Hay seguro de ciberseguridad activo?', tag:'important', type:'options', multi:false,
+            opts:['Sí, ya fue notificado','Sí, pendiente de notificar','No hay seguro','No sé'] },
+          { id:'sla', text:'¿Cuánto tiempo de downtime puede tolerar la operación?', tag:'important', type:'options', multi:false,
+            opts:['Cero — producción crítica','Horas','Días','Semanas','No hay urgencia'] },
+          { id:'notas_corp', text:'Información adicional, diagrama de red o contexto extra', tag:'optional', type:'textarea',
+            placeholder:'Topología de red, stack tecnológico, contexto relevante...' },
+        ]
+      },
+    ]
+  }
+};
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let currentTrack = null;
+let answers = {};
+let skippedQuestions = new Set();
+let skippedPhases = new Set();
+let openPhases = new Set();
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+function init() {
+  const arr = new Uint8Array(5);
+  crypto.getRandomValues(arr);
+  const id = 'CASE-' + Array.from(arr).map(b => b.toString(36).padStart(2,'0')).join('').substr(0,8).toUpperCase();
+  document.getElementById('case-id').textContent = id;
+  document.getElementById('case-time').textContent = new Date().toLocaleString('es-AR',{
+    day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
+  });
+}
+
+function setTrack(track) {
+  currentTrack = track;
+  answers = {};
+  skippedQuestions = new Set();
+  skippedPhases = new Set();
+  openPhases = new Set();
+
+  document.getElementById('track-civil').className = 'track-btn' + (track === 'civil' ? ' active' : '');
+  document.getElementById('track-corp').className  = 'track-btn' + (track === 'corp'  ? ' active-danger' : '');
+
+  document.getElementById('progress-section').style.display = 'block';
+  document.getElementById('export-panel').style.display = 'block';
+  document.getElementById('export-output').classList.remove('visible');
+
+  renderPhases();
+  updateProgress();
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function renderPhases() {
+  const container = document.getElementById('phases-container');
+  container.innerHTML = '';
+  TRACKS[currentTrack].phases.forEach((phase, idx) => {
+    container.appendChild(buildPhase(phase, idx));
+  });
+}
+
+function buildPhase(phase, idx) {
+  const isSkipped = skippedPhases.has(phase.id);
+  const isOpen    = openPhases.has(phase.id);
+  const isDone    = isPhaseComplete(phase);
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'phase';
+  wrapper.id = 'phase-' + phase.id;
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'phase-header' + (isOpen ? ' open' : '') + (isDone ? ' done' : '');
+  header.onclick = () => togglePhase(phase.id);
+
+  let badgeHTML = '';
+  if (isSkipped) badgeHTML = '<span class="phase-badge skip">Omitida</span>';
+  else if (isDone) badgeHTML = '<span class="phase-badge done">✓ Lista</span>';
+
+  header.innerHTML = `
+    <div class="phase-left">
+      <div class="phase-num">${idx + 1}</div>
+      <div>
+        <div class="phase-title">${phase.title}</div>
+        <div class="phase-subtitle">${phase.subtitle}</div>
+      </div>
+    </div>
+    <div class="phase-right">${badgeHTML}<span class="chevron">▾</span></div>
+  `;
+
+  // Body
+  const body = document.createElement('div');
+  body.className = 'phase-body' + (isOpen ? ' open' : '');
+  body.id = 'phasebody-' + phase.id;
+
+  // Skip phase button
+  const skipRow = document.createElement('div');
+  skipRow.className = 'skip-phase-row';
+  const skipBtn = document.createElement('button');
+  skipBtn.className = 'skip-phase-btn' + (isSkipped ? ' active' : '');
+  skipBtn.textContent = isSkipped ? '↺ Incluir fase' : '⊘ Omitir fase completa';
+  skipBtn.onclick = (e) => { e.stopPropagation(); toggleSkipPhase(phase.id); };
+  skipRow.appendChild(skipBtn);
+  body.appendChild(skipRow);
+
+  // Questions
+  phase.questions.forEach((q, qIdx) => {
+    body.appendChild(buildQuestion(q, qIdx));
+  });
+
+  // Footer
+  const footer = document.createElement('div');
+  footer.className = 'phase-footer';
+  footer.innerHTML = `
+    <button class="btn-primary" onclick="markPhaseDone('${phase.id}')">Fase completada →</button>
+    <button class="btn-secondary" onclick="togglePhase('${phase.id}')">Cerrar</button>
+  `;
+  body.appendChild(footer);
+
+  wrapper.appendChild(header);
+  wrapper.appendChild(body);
+  return wrapper;
+}
+
+function buildQuestion(q, idx) {
+  const isSkipped = skippedQuestions.has(q.id);
+  const el = document.createElement('div');
+  el.className = 'q-block' + (isSkipped ? ' skipped' : '');
+  el.id = 'q-' + q.id;
+
+  const tagLabels = { critical:'CRÍTICO', important:'IMPORTANTE', optional:'OPCIONAL' };
+  const tagHTML = `<span class="tag ${q.tag}">${tagLabels[q.tag]}</span>`;
+
+  const skipBtnHTML = isSkipped
+    ? `<button class="btn-unskip" onclick="toggleSkipQ('${q.id}')">↺ Incluir</button>`
+    : `<button class="btn-skip"   onclick="toggleSkipQ('${q.id}')">Omitir</button>`;
+
+  let inputHTML = '';
+  if (q.type === 'options') {
+    const opts = q.opts.map(o => {
+      const sel = answers[q.id] &&
+        (Array.isArray(answers[q.id]) ? answers[q.id].includes(o) : answers[q.id] === o);
+      const cls = sel ? getOptClass(q.id, o) : '';
+      return `<button class="opt-btn${cls ? ' '+cls : ''}" onclick="selectOpt(this,'${q.id}','${o.replace(/'/g,"\\'").replace(/"/g,'&quot;')}',${q.multi})">${o}</button>`;
+    }).join('');
+    inputHTML = `<div class="opt-group">${opts}</div>`;
+    if (q.id === 'activo' || q.id === 'estado_incidente') {
+      inputHTML += buildUrgencyHTML(q.id);
+    }
+  } else if (q.type === 'textarea') {
+    const val = (answers[q.id] || '').replace(/</g,'&lt;');
+    const ph1 = (q.placeholder||'').replace(/"/g,'&quot;');
+    inputHTML = `<textarea placeholder="${ph1}" oninput="saveText('${q.id}',this.value)">${val}</textarea>`;
+  } else if (q.type === 'text') {
+    const val = (answers[q.id] || '').replace(/"/g,'&quot;');
+    const ph2 = (q.placeholder||'').replace(/"/g,'&quot;');
+    inputHTML = `<input type="text" placeholder="${ph2}" value="${val}" oninput="saveText('${q.id}',this.value)">`;
+  }
+
+  el.innerHTML = `
+    <div class="q-top">
+      <div class="q-label">
+        <span class="q-num">${String(idx+1).padStart(2,'0')}</span>
+        <span class="q-text">${q.text} ${tagHTML}</span>
+      </div>
+      <div class="q-actions">${skipBtnHTML}</div>
+    </div>
+    ${inputHTML}
+  `;
+  return el;
+}
+
+function getOptClass(qid, val) {
+  const dangerVals = ['Sí, sigue activo','Sí, activo y en curso','Sí, por dinero','Sí, amenaza de publicar fotos/videos','Sí, confirmada'];
+  const warnVals   = ['No sé','Creo que sí','Sí, posible pero no confirmada'];
+  if (dangerVals.includes(val)) return 'selected-danger';
+  if (warnVals.includes(val))   return 'selected-warn';
+  return 'selected';
+}
+
+function buildUrgencyHTML(qid) {
+  const val = answers[qid];
+  let msg = 'Esperando respuesta…';
+  let color = 'rgba(255,255,255,0.06)';
+  let textColor = 'var(--text-muted)';
+  if (val === 'Sí, sigue activo' || val === 'Sí, activo y en curso') {
+    msg = '⚡ INCIDENTE ACTIVO — Prioridad máxima. Contención inmediata.';
+    color = 'rgba(255,77,109,0.2)'; textColor = 'var(--danger)';
+  } else if (val === 'No sé' || val === 'Creo que sí') {
+    msg = '⚠ Estado incierto — Asumir activo hasta confirmación.';
+    color = 'rgba(255,179,71,0.2)'; textColor = 'var(--warn)';
+  } else if (val) {
+    msg = '✓ Incidente aparentemente contenido.';
+    color = 'rgba(0,229,160,0.15)'; textColor = 'var(--accent)';
+  }
+  return `<div class="urgency-display" id="urgency-${qid}" style="border-color:${color};color:${textColor}">${msg}</div>`;
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────────
+function togglePhase(phaseId) {
+  const isOpen = openPhases.has(phaseId);
+  if (isOpen) { openPhases.delete(phaseId); } else { openPhases.add(phaseId); }
+  const header = document.querySelector('#phase-' + phaseId + ' .phase-header');
+  const body   = document.getElementById('phasebody-' + phaseId);
+  if (!header || !body) return;
+  if (openPhases.has(phaseId)) {
+    header.classList.add('open');
+    body.classList.add('open');
+  } else {
+    header.classList.remove('open');
+    body.classList.remove('open');
+  }
+}
+
+function markPhaseDone(phaseId) {
+  openPhases.delete(phaseId);
+  const header = document.querySelector('#phase-' + phaseId + ' .phase-header');
+  const body   = document.getElementById('phasebody-' + phaseId);
+  if (!header || !body) return;
+  header.classList.remove('open');
+  header.classList.add('done');
+  body.classList.remove('open');
+  // Refresh badge
+  const right = header.querySelector('.phase-right');
+  const existing = right.querySelector('.phase-badge');
+  if (existing) existing.remove();
+  const badge = document.createElement('span');
+  badge.className = 'phase-badge done';
+  badge.textContent = '✓ Lista';
+  right.insertBefore(badge, right.lastElementChild);
+  updateProgress();
+}
+
+function toggleSkipPhase(phaseId) {
+  if (skippedPhases.has(phaseId)) { skippedPhases.delete(phaseId); }
+  else { skippedPhases.add(phaseId); }
+  const wasOpen = openPhases.has(phaseId);
+  renderPhases();
+  if (wasOpen) {
+    openPhases.add(phaseId);
+    const body   = document.getElementById('phasebody-' + phaseId);
+    const header = document.querySelector('#phase-' + phaseId + ' .phase-header');
+    if (body)   body.classList.add('open');
+    if (header) header.classList.add('open');
+  }
+  updateProgress();
+}
+
+function toggleSkipQ(qid) {
+  if (skippedQuestions.has(qid)) { skippedQuestions.delete(qid); }
+  else { skippedQuestions.add(qid); }
+  const el = document.getElementById('q-' + qid);
+  if (!el) return;
+  const isNowSkipped = skippedQuestions.has(qid);
+  el.classList.toggle('skipped', isNowSkipped);
+  el.querySelector('.q-actions').innerHTML = isNowSkipped
+    ? `<button class="btn-unskip" onclick="toggleSkipQ('${qid}')">↺ Incluir</button>`
+    : `<button class="btn-skip"   onclick="toggleSkipQ('${qid}')">Omitir</button>`;
+  updateProgress();
+}
+
+function selectOpt(btn, qid, val, multi) {
+  if (multi) {
+    if (!Array.isArray(answers[qid])) answers[qid] = [];
+    const idx = answers[qid].indexOf(val);
+    if (idx > -1) {
+      answers[qid].splice(idx, 1);
+      btn.classList.remove('selected','selected-danger','selected-warn');
+    } else {
+      answers[qid].push(val);
+      btn.classList.add(getOptClass(qid, val));
+    }
+  } else {
+    const group = btn.closest('.opt-group');
+    group.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected','selected-danger','selected-warn'));
+    answers[qid] = val;
+    btn.classList.add(getOptClass(qid, val));
+  }
+  // Refresh urgency display (replace, not append)
+  const urgency = document.getElementById('urgency-' + qid);
+  if (urgency) {
+    const temp = document.createElement('div');
+    temp.innerHTML = buildUrgencyHTML(qid);
+    urgency.replaceWith(temp.firstChild);
+  }
+  updateProgress();
+}
+
+function saveText(qid, val) {
+  answers[qid] = val;
+  updateProgress();
+}
+
+// ── COMPLETION LOGIC ──────────────────────────────────────────────────────────
+function isPhaseComplete(phase) {
+  if (skippedPhases.has(phase.id)) return true;
+  const activeQs = phase.questions.filter(q => !skippedQuestions.has(q.id));
+  if (activeQs.length === 0) return true;
+  const criticalQs = activeQs.filter(q => q.tag === 'critical');
+  // If there are critical questions, ALL must be answered
+  if (criticalQs.length > 0) {
+    return criticalQs.every(q => {
+      const a = answers[q.id];
+      if (!a) return false;
+      return Array.isArray(a) ? a.length > 0 : a.trim() !== '';
+    });
+  }
+  // No critical questions (e.g. phase 3 civil): require at least ONE answer from any question
+  return activeQs.some(q => {
+    const a = answers[q.id];
+    if (!a) return false;
+    return Array.isArray(a) ? a.length > 0 : a.trim() !== '';
+  });
+}
+
+function updateProgress() {
+  if (!currentTrack) return;
+  const phases = TRACKS[currentTrack].phases;
+  const done = phases.filter(p => isPhaseComplete(p)).length;
+  const pct = Math.round((done / phases.length) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-label').textContent =
+    pct === 100 ? '✓ Todas las fases completadas' : `Fase ${done + 1} de ${phases.length}`;
+}
+
+// ── CIVIL RECOMMENDATIONS ────────────────────────────────────────────────────
+function buildCivilRecommendations(ans) {
+  const urgent      = [];
+  const alertas     = [];
+  const acceso      = [];
+  const seguridad   = [];
+  const proximos    = [];
+  const autoridades = [];
+
+  const plataforma     = ans.plataforma         || '';
+  const puedeEntrar    = ans.puede_entrar        || '';
+  const emailTel       = ans.email_tel_original  || '';
+  const twofa          = ans['2fa']              || '';
+  const extorsion      = ans.extorsion           || '';
+  const activo         = ans.activo              || '';
+  const menor          = ans.menor               || '';
+  const evidencia      = ans.evidencia           || '';
+  const mismaPass      = ans.misma_pass          || '';
+  const linkSosp       = ans.link_sospechoso     || '';
+  const aplicaciones   = ans.aplicaciones        || '';
+  const queHicieron    = Array.isArray(ans.que_hicieron)    ? ans.que_hicieron    : (ans.que_hicieron    ? [ans.que_hicieron]    : []);
+  const denuncias      = Array.isArray(ans.denuncias)       ? ans.denuncias       : (ans.denuncias       ? [ans.denuncias]       : []);
+  const contrasenaComp = Array.isArray(ans.contrasena_comp) ? ans.contrasena_comp : (ans.contrasena_comp ? [ans.contrasena_comp] : []);
+
+  // ── URGENTE ──
+  if (activo === 'Sí, sigue activo') {
+    urgent.push('Acceso no autorizado ACTIVO. Contención inmediata es prioridad #1 antes de cualquier otra acción.');
+  }
+
+  const esSextorsion = extorsion === 'Sí, amenaza de publicar fotos/videos'
+    || queHicieron.includes('Me extorsionaron con fotos/videos');
+  if (esSextorsion) {
+    urgent.push('SEXTORSIÓN detectada. NO pagar, NO negociar — el 40% de quienes pagan reciben amenazas diarias posteriores; pagar confirma que el método funciona.');
+    urgent.push('No borrar ninguna conversación con el atacante — son evidencia para la denuncia.');
+    urgent.push('Denunciar inmediatamente a UFECI (denunciasufeci@mpf.gov.ar) antes de cualquier contacto adicional con el atacante.');
+    urgent.push('Si hay imágenes circulando o en riesgo de circular: stopncii.org — genera un hash sin subir la imagen; Meta, Google y 100+ plataformas la bloquean automáticamente.');
+  } else if (extorsion === 'Sí, por dinero') {
+    urgent.push('Extorsión activa. NO realizar ningún pago. Guardar capturas de las amenazas con fecha y hora visibles.');
+    urgent.push('Denunciar a UFECI (denunciasufeci@mpf.gov.ar) con toda la evidencia antes de responder al atacante.');
+  }
+
+  if (queHicieron.includes('Enviaron mensajes a mis contactos')) {
+    urgent.push('El atacante contactó a personas de tu red. Publicar un aviso de alerta en otras cuentas activas o contactar directamente a allegados para que ignoren los mensajes.');
+  }
+
+  // ── ALERTAS ESPECIALES ──
+  if (menor === 'Sí') {
+    alertas.push('VÍCTIMA MENOR DE EDAD — Notificar a padres/tutores si no están presentes.');
+    alertas.push('Denunciar ante UFECI: tiene mandato específico para explotación de menores y acuerdo formal de cooperación con NCMEC (missingkids.org) para casos con material de abuso.');
+    alertas.push('No compartir datos de la víctima en formularios de recuperación sin supervisión de un adulto responsable.');
+  }
+
+  // ── RECUPERACIÓN DE ACCESO ──
+  if (puedeEntrar === 'Sí, tengo acceso') {
+    acceso.push('Acceso activo — actuar de inmediato en este orden:');
+    acceso.push('  1. Cambiar contraseña ahora por una única y fuerte.');
+    acceso.push('  2. Ir a Configuración → Seguridad → Actividad de inicio de sesión y cerrar TODAS las sesiones activas.');
+    acceso.push('  3. Revocar el acceso de todas las apps de terceros conectadas a la cuenta.');
+
+  } else if (puedeEntrar === 'No, cambiaron la contraseña') {
+    if (emailTel === 'Sí, tengo acceso al email' || emailTel === 'Sí, tengo acceso al número' || emailTel === 'Tengo ambos') {
+      acceso.push(`Recuperación estándar disponible: usar "Olvidé mi contraseña" en ${plataforma} → enviar el código al email/número de recuperación original.`);
+    } else if (emailTel === 'No tengo ninguno') {
+      if (plataforma === 'Instagram') {
+        acceso.push('Ir a instagram.com/hacked → "Mi cuenta fue hackeada" → verificación por video selfie: grabar girando la cabeza lentamente en varias direcciones. Instagram compara el video contra las fotos existentes en el perfil.');
+        acceso.push('Tener listos: email anterior, número de teléfono anterior, dispositivos usados para acceder. El proceso puede tardar entre 1 día y varias semanas.');
+        acceso.push('Si el atacante eliminó todas las fotos del perfil, el video selfie puede fallar — en ese caso solicitar revisión manual adjuntando documento de identidad.');
+      } else if (plataforma === 'Gmail') {
+        acceso.push('Ir a accounts.google.com/signin/recovery. Google puede solicitar: contraseñas anteriores, mes/año de creación de la cuenta, o dispositivos desde los que se accedió.');
+        acceso.push('Si la recuperación automática falla, esperar 7 días (los cambios de datos de recuperación tardan en propagarse en los sistemas de Google) y reintentar.');
+      } else {
+        acceso.push(`Usar el flujo de verificación de identidad de ${plataforma}: buscar "cuenta hackeada" en el centro de ayuda oficial y seguir el proceso de recuperación avanzada con documento de identidad.`);
+      }
+    } else if (emailTel === 'No recuerdo cuál usé') {
+      acceso.push(`Intentar recuperación por email primero, luego por número. Si ninguno funciona, contactar soporte de ${plataforma} indicando que es una cuenta comprometida.`);
+    }
+
+  } else if (puedeEntrar === 'No, cambiaron el email/tel') {
+    acceso.push('El atacante modificó los datos de recuperación. PRIMERO: revisar la casilla de email original — Meta envía un mensaje con enlace "revertir este cambio" válido aproximadamente 24 horas.');
+    if (plataforma === 'Instagram') {
+      acceso.push('Si el enlace expiró: ir a instagram.com/hacked → flujo de verificación por video selfie (método oficial cuando se perdió acceso al email/teléfono de recuperación).');
+    }
+    acceso.push(`Si no hay enlace de reversión disponible: contactar soporte de ${plataforma} indicando cambio no autorizado con fecha y hora exacta del incidente.`);
+
+  } else if (puedeEntrar === 'No, inhabilitaron la cuenta') {
+    acceso.push(`Cuenta INHABILITADA (distinto a eliminada — no tiene período de gracia automático). Ir al formulario de apelación de ${plataforma} y seleccionar "cuenta hackeada", nunca "cometí una infracción" — esa distinción define el tipo de revisión.`);
+
+  } else if (puedeEntrar === 'Me cerraron la cuenta') {
+    acceso.push('Si la cuenta fue ELIMINADA: Instagram da 30 días de gracia para restaurarla (solo aplica a cuentas eliminadas, no a inhabilitadas). Intentar login inmediatamente.');
+    acceso.push('Después de 30 días la cuenta es irrecuperable y los datos se purgan a los 90 días. Actuar sin demora.');
+  }
+
+  // ── SEGURIDAD INMEDIATA ──
+  if (twofa === 'No tenía' || twofa === 'No sé qué es eso') {
+    seguridad.push('Una vez recuperado el acceso: activar 2FA obligatoriamente. Preferir app de autenticación (Google Authenticator, Authy) sobre SMS. En WhatsApp, activar passkeys para eliminar el riesgo de SIM swap.');
+  }
+
+  if (mismaPass === 'Sí, la misma en todo' || mismaPass === 'Sí, parecida') {
+    seguridad.push('Contraseña reutilizada en otras cuentas. Cambiarla en todos los servicios que la compartan. Usar un gestor de contraseñas (Bitwarden — gratuito y open source).');
+  }
+
+  if (contrasenaComp.includes('A una pareja o ex pareja') || contrasenaComp.includes('A un amigo/familiar')) {
+    seguridad.push('La contraseña fue compartida con alguien conocido — considerar este vector como probable. Cambiar todas las contraseñas compartidas antes de continuar.');
+  }
+
+  if (linkSosp !== 'No creo' && linkSosp !== 'No sé' && linkSosp !== '') {
+    seguridad.push('Posible phishing como vector de entrada. Escanear el dispositivo usado con Malwarebytes (gratuito) para descartar malware o keylogger activo.');
+  }
+
+  if (aplicaciones !== '' && aplicaciones !== 'No' && aplicaciones !== 'No sé') {
+    seguridad.push('Revocar acceso de todas las aplicaciones de terceros desde Configuración → Seguridad → Apps conectadas. Hacerlo incluso después de recuperar el acceso.');
+  }
+
+  // ── PRÓXIMOS PASOS ──
+  if (evidencia === 'No tomé capturas' || evidencia === 'No sé qué guardar') {
+    proximos.push('Capturar evidencia ahora: actividad de inicio de sesión, conversaciones del atacante, cambios de perfil, mensajes recibidos. Incluir fecha y hora visible en cada captura.');
+  }
+
+  if (!denuncias.includes('Sí, reporté a la plataforma') && !denuncias.includes('Sí, a ambos')) {
+    proximos.push(`Reportar la cuenta como comprometida directamente en ${plataforma} — aceleran la revisión cuando la denuncia viene desde la propia plataforma.`);
+  }
+
+  // ── CÓMO ELEVAR A AUTORIDADES ──
+  const hayDelito = activo || puedeEntrar || extorsion;
+  if (hayDelito) {
+    autoridades.push('El acceso no autorizado a cuentas digitales es delito en Argentina (Ley 26.388, art. 153 bis CP).');
+    autoridades.push('Llevar a la denuncia:');
+    autoridades.push('  · Capturas de toda actividad sospechosa (con fecha y hora visibles)');
+    autoridades.push('  · Historial de inicio de sesión exportado desde la plataforma');
+    autoridades.push('  · IPs o datos del atacante si están disponibles en los logs');
+    autoridades.push('  · Conversaciones completas con el atacante sin editar ni borrar');
+    autoridades.push('  · Documento de identidad de la víctima');
+    autoridades.push('');
+    autoridades.push('UFECI — Unidad Fiscal Especializada en Ciberdelincuencia (Nacional):');
+    autoridades.push('  Email:     denunciasufeci@mpf.gov.ar');
+    autoridades.push('  Tel:       (+54 11) 5071-0040 | urgencias: 5071-0044 (lun-vie 9-16h)');
+    autoridades.push('  Web:       mpf.gob.ar/ufeci/');
+    autoridades.push('');
+    autoridades.push('División Delitos Tecnológicos — Policía Federal Argentina:');
+    autoridades.push('  Email:     delitostecnologicos@policiafederal.gov.ar');
+    autoridades.push('  Tel:       4800-1120 / 4370-5899');
+    autoridades.push('  Dirección: Cavia 3350, 1er piso, CABA');
+    autoridades.push('');
+    autoridades.push('Denuncia online (portal oficial del Estado):');
+    autoridades.push('  argentina.gob.ar/servicio/denunciar-un-delito-informatico');
+
+    if (esSextorsion || extorsion === 'Sí, por dinero') {
+      autoridades.push('');
+      autoridades.push('Para extorsión con imágenes (reporte internacional): ic3.gov acepta reportes desde cualquier país y coordina con INTERPOL y organismos locales.');
+    }
+    if (menor === 'Sí' && esSextorsion) {
+      autoridades.push('Para víctima menor con material de abuso: NCMEC CyberTipline — missingkids.org/gethelpnow/cybertipline. La Fiscalía de Buenos Aires tiene acuerdo formal de cooperación con NCMEC.');
+    }
+  }
+
+  // ── BUILD ──
+  const nada = [urgent, alertas, acceso, seguridad, proximos, autoridades].every(a => a.length === 0);
+  let r = '\n' + '═'.repeat(60) + '\n';
+  r += 'PASOS SUGERIDOS\n';
+  r += '═'.repeat(60) + '\n';
+
+  if (nada) {
+    r += '\n  (Completar las fases del caso para generar recomendaciones específicas)\n';
+    return r;
+  }
+
+  if (urgent.length)      { r += '\n⚡ URGENTE\n';                    urgent.forEach(x      => r += `  → ${x}\n`); }
+  if (alertas.length)     { r += '\n🚨 ALERTAS ESPECIALES\n';         alertas.forEach(x     => r += `  → ${x}\n`); }
+  if (acceso.length)      { r += '\n🔑 RECUPERACIÓN DE ACCESO\n';     acceso.forEach(x      => r += `  → ${x}\n`); }
+  if (seguridad.length)   { r += '\n🛡  SEGURIDAD INMEDIATA\n';       seguridad.forEach(x   => r += `  → ${x}\n`); }
+  if (proximos.length)    { r += '\n📋 PRÓXIMOS PASOS\n';             proximos.forEach(x    => r += `  → ${x}\n`); }
+  if (autoridades.length) { r += '\n⚖  CÓMO ELEVAR A AUTORIDADES\n'; autoridades.forEach(x => r += `  ${x}\n`); }
+
+  return r;
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function generateExport() {
+  if (!currentTrack) return;
+  const data = TRACKS[currentTrack];
+  const caseId   = document.getElementById('case-id').textContent;
+  const caseTime = document.getElementById('case-time').textContent;
+
+  let r = `REPORTE DE INCIDENTE — ${caseId}\n`;
+  r += `Fecha: ${caseTime}\n`;
+  r += `Track: ${data.label}\n`;
+  r += '═'.repeat(60) + '\n\n';
+
+  data.phases.forEach((phase, pi) => {
+    if (skippedPhases.has(phase.id)) {
+      r += `[FASE ${pi+1}] ${phase.title.toUpperCase()} — OMITIDA\n\n`;
+      return;
+    }
+    r += `[FASE ${pi+1}] ${phase.title.toUpperCase()}\n`;
+    r += '─'.repeat(40) + '\n';
+    phase.questions.forEach((q, qi) => {
+      if (skippedQuestions.has(q.id)) {
+        r += `  ${qi+1}. ${q.text}\n     → [OMITIDA]\n\n`;
+        return;
+      }
+      const a = answers[q.id];
+      const aStr = !a ? '(sin respuesta)' : Array.isArray(a) ? a.join(', ') : a;
+      r += `  ${qi+1}. ${q.text}\n     → ${aStr}\n\n`;
+    });
+  });
+
+  if (currentTrack === 'civil') {
+    r += buildCivilRecommendations(answers);
+  }
+
+  r += '\n' + '═'.repeat(60) + '\n';
+  r += 'Generado con Forensic Intake Framework — by TomDoe\n';
+
+  const out = document.getElementById('export-output');
+  out.textContent = r;
+  out.classList.add('visible');
+}
+
+function copyExport(btn) {
+  let text = document.getElementById('export-output').textContent;
+  if (!text.trim()) {
+    generateExport();
+    text = document.getElementById('export-output').textContent;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copiado';
+    const warn = document.createElement('span');
+    warn.style.cssText = 'font-size:11px;color:var(--warn);margin-left:10px;letter-spacing:0.03em;';
+    warn.textContent = '⚠ Reporte con datos sensibles en portapapeles';
+    btn.parentNode.appendChild(warn);
+    setTimeout(() => { btn.textContent = 'Copiar al portapapeles'; warn.remove(); }, 3000);
+  }).catch(() => {
+    // Fallback for browsers without clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = 'Copiar al portapapeles'; }, 2000);
+  });
+}
+
+function downloadExport() {
+  if (!currentTrack) return;
+  generateExport();
+  const text = document.getElementById('export-output').textContent;
+  const caseId = document.getElementById('case-id').textContent;
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = caseId + '.txt';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function resetAll() {
+  currentTrack = null;
+  answers = {};
+  skippedQuestions = new Set();
+  skippedPhases = new Set();
+  openPhases = new Set();
+  document.getElementById('track-civil').className = 'track-btn';
+  document.getElementById('track-corp').className  = 'track-btn';
+  document.getElementById('phases-container').innerHTML = '';
+  document.getElementById('progress-section').style.display = 'none';
+  document.getElementById('export-panel').style.display = 'none';
+  document.getElementById('export-output').classList.remove('visible');
+  init();
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
