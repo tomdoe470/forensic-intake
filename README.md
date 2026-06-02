@@ -1,4 +1,4 @@
-# Forensic Incident Toolkit
+# Forensic Intake - Incident Toolkit
 
 Toolkit de respuesta a incidentes digitales para las primeras horas. Dos herramientas que funcionan solas o en conjunto:
 
